@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\ProductionBundleRequest;
 use App\Models\Buyer;
 use App\Models\ProductionBundle;
 use App\Models\SewingLine;
@@ -9,8 +10,6 @@ use App\Models\Style;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class ProductionBundleController extends Controller
@@ -71,9 +70,9 @@ class ProductionBundleController extends Controller
         return view('production-bundles.create', $this->formOptions());
     }
 
-    public function store(Request $request): JsonResponse|RedirectResponse
+    public function store(ProductionBundleRequest $request): JsonResponse|RedirectResponse
     {
-        $productionBundle = ProductionBundle::query()->create($this->validatedData($request));
+        $productionBundle = ProductionBundle::query()->create($request->validated());
 
         if ($request->expectsJson()) {
             session()->flash('success', 'Production bundle created successfully.');
@@ -104,9 +103,9 @@ class ProductionBundleController extends Controller
         ));
     }
 
-    public function update(Request $request, ProductionBundle $productionBundle): JsonResponse|RedirectResponse
+    public function update(ProductionBundleRequest $request, ProductionBundle $productionBundle): JsonResponse|RedirectResponse
     {
-        $productionBundle->update($this->validatedData($request, $productionBundle));
+        $productionBundle->update($request->validated());
 
         if ($request->expectsJson()) {
             session()->flash('success', 'Production bundle updated successfully.');
@@ -141,51 +140,5 @@ class ProductionBundleController extends Controller
             'styles' => Style::query()->with('buyer')->orderBy('style_no')->get(),
             'sewingLines' => SewingLine::query()->orderBy('line_name')->get(),
         ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function validatedData(Request $request, ?ProductionBundle $productionBundle = null): array
-    {
-        $validator = Validator::make($request->all(), [
-            'bundle_no' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('production_bundles', 'bundle_no')->ignore($productionBundle),
-            ],
-            'buyer_id' => ['required', 'exists:buyers,id'],
-            'style_id' => ['required', 'exists:styles,id'],
-            'color' => ['required', 'string', 'max:100'],
-            'size' => ['required', 'string', 'max:50'],
-            'line_id' => ['required', 'exists:sewing_lines,id'],
-            'quantity' => ['required', 'integer', 'min:1'],
-            'completed_qty' => ['required', 'integer', 'min:0', 'lte:quantity'],
-            'rejected_qty' => ['required', 'integer', 'min:0', 'lte:quantity'],
-            'operator_name' => ['nullable', 'string', 'max:150'],
-            'production_date' => ['required', 'date', 'before_or_equal:today'],
-            'remarks' => ['nullable', 'string'],
-        ], [
-            'bundle_no.unique' => 'This bundle number is already in use.',
-            'completed_qty.lte' => 'The completed quantity cannot be greater than the quantity.',
-            'rejected_qty.lte' => 'The rejected quantity cannot be greater than the quantity.',
-            'production_date.before_or_equal' => 'The production date cannot be in the future.',
-        ]);
-
-        $validator->after(function ($validator) use ($request): void {
-            $completedQty = $request->integer('completed_qty');
-            $rejectedQty = $request->integer('rejected_qty');
-            $quantity = $request->integer('quantity');
-
-            if ($completedQty + $rejectedQty > $quantity) {
-                $validator->errors()->add(
-                    'completed_qty',
-                    'The completed and rejected quantities together cannot be greater than the quantity.'
-                );
-            }
-        });
-
-        return $validator->validate();
     }
 }
