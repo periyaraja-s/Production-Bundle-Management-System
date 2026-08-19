@@ -9,7 +9,11 @@
 <body class="bg-light">
     <nav class="navbar navbar-dark bg-dark mb-4">
         <div class="container">
-            <a class="navbar-brand" href="{{ route('production-bundles.index') }}">Production Bundle Management</a>
+            <a class="navbar-brand" href="{{ route('dashboard') }}">Production Bundle Management</a>
+            <div class="navbar-nav flex-row gap-3">
+                <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
+                <a class="nav-link" href="{{ route('production-bundles.index') }}">Bundles</a>
+            </div>
         </div>
     </nav>
 
