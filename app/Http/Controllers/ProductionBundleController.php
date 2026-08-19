@@ -15,14 +15,55 @@ use Illuminate\View\View;
 
 class ProductionBundleController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $perPage = in_array((int) $request->input('per_page', 20), [20, 50, 100], true)
+            ? (int) $request->input('per_page', 20)
+            : 20;
+        $sort = $request->input('sort', 'production_date');
+        $direction = $request->input('direction') === 'asc' ? 'asc' : 'desc';
+
         $productionBundles = ProductionBundle::query()
             ->with(['buyer', 'style', 'sewingLine'])
-            ->latest('production_date')
-            ->get();
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $search = '%'.$request->input('search').'%';
 
-        return view('production-bundles.index', compact('productionBundles'));
+                $query->where(function ($query) use ($search): void {
+                    $query->where('bundle_no', 'like', $search)
+                        ->orWhere('operator_name', 'like', $search)
+                        ->orWhere('color', 'like', $search)
+                        ->orWhereHas('buyer', fn ($query) => $query->where('buyer_name', 'like', $search))
+                        ->orWhereHas('style', fn ($query) => $query->where('style_no', 'like', $search));
+                });
+            })
+            ->when($request->filled('buyer_id'), fn ($query) => $query->where('buyer_id', $request->input('buyer_id')))
+            ->when($request->filled('style_id'), fn ($query) => $query->where('style_id', $request->input('style_id')))
+            ->when($request->filled('line_id'), fn ($query) => $query->where('line_id', $request->input('line_id')))
+            ->when($request->filled('date_from'), fn ($query) => $query->whereDate('production_date', '>=', $request->input('date_from')))
+            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('production_date', '<=', $request->input('date_to')));
+
+        match ($sort) {
+            'bundle_no', 'quantity', 'production_date' => $productionBundles->orderBy($sort, $direction),
+            'buyer' => $productionBundles->orderBy(
+                Buyer::query()->select('buyer_name')->whereColumn('buyers.id', 'production_bundles.buyer_id'),
+                $direction,
+            ),
+            'style' => $productionBundles->orderBy(
+                Style::query()->select('style_no')->whereColumn('styles.id', 'production_bundles.style_id'),
+                $direction,
+            ),
+            'efficiency' => $productionBundles->orderByRaw(
+                'completed_qty * 100.0 / nullif(quantity, 0) '.$direction,
+            ),
+            default => $productionBundles->latest('production_date'),
+        };
+
+        $productionBundles = $productionBundles->paginate($perPage)->withQueryString();
+
+        return view('production-bundles.index', array_merge(
+            compact('productionBundles', 'sort', 'direction', 'perPage'),
+            $this->formOptions(),
+        ));
     }
 
     public function create(): View
