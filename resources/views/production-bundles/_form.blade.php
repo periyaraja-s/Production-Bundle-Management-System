@@ -4,6 +4,8 @@
     <div class="alert alert-danger">Please correct the highlighted fields and try again.</div>
 @endif
 
+<div id="form-message" class="d-none" role="alert" aria-live="polite"></div>
+
 <div class="row g-3">
     <div class="col-md-4">
         <label for="bundle_no" class="form-label">Bundle No.</label>
@@ -100,12 +102,16 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('production-bundle-form');
         const quantity = document.getElementById('quantity');
         const completedQty = document.getElementById('completed_qty');
         const rejectedQty = document.getElementById('rejected_qty');
         const balance = document.getElementById('balance');
         const efficiency = document.getElementById('efficiency');
         const rejection = document.getElementById('rejection');
+        const formMessage = document.getElementById('form-message');
+        const submitButton = form.querySelector('[type="submit"]');
+        const defaultSubmitText = submitButton.textContent;
 
         const updateCalculations = () => {
             const quantityValue = Number(quantity.value) || 0;
@@ -123,5 +129,75 @@
         });
 
         updateCalculations();
+
+        const showMessage = (message, type) => {
+            formMessage.textContent = message;
+            formMessage.className = `alert alert-${type}`;
+        };
+
+        const clearValidationErrors = () => {
+            form.querySelectorAll('.is-invalid').forEach((input) => input.classList.remove('is-invalid'));
+            form.querySelectorAll('[data-validation-error]').forEach((message) => message.remove());
+        };
+
+        const showValidationErrors = (errors) => {
+            Object.entries(errors).forEach(([field, messages]) => {
+                const input = form.querySelector(`[name="${field}"]`);
+
+                if (!input) {
+                    return;
+                }
+
+                input.classList.add('is-invalid');
+                const message = document.createElement('div');
+                message.className = 'invalid-feedback';
+                message.dataset.validationError = 'true';
+                message.textContent = messages[0];
+                input.insertAdjacentElement('afterend', message);
+            });
+        };
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (submitButton.disabled) {
+                return;
+            }
+
+            clearValidationErrors();
+            formMessage.className = 'd-none';
+            submitButton.disabled = true;
+            submitButton.textContent = 'Saving...';
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: new FormData(form),
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    window.location.assign(data.redirect_url);
+                    return;
+                }
+
+                if (response.status === 422 && data.errors) {
+                    showMessage('Please correct the highlighted fields and try again.', 'danger');
+                    showValidationErrors(data.errors);
+                } else {
+                    showMessage(data.message || 'Unable to save the production bundle. Please try again.', 'danger');
+                }
+            } catch (error) {
+                showMessage('Unable to save the production bundle. Please check your connection and try again.', 'danger');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = defaultSubmitText;
+            }
+        });
     });
 </script>

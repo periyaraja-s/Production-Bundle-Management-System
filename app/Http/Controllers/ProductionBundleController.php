@@ -6,6 +6,7 @@ use App\Models\Buyer;
 use App\Models\ProductionBundle;
 use App\Models\SewingLine;
 use App\Models\Style;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -29,9 +30,18 @@ class ProductionBundleController extends Controller
         return view('production-bundles.create', $this->formOptions());
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $productionBundle = ProductionBundle::query()->create($this->validatedData($request));
+
+        if ($request->expectsJson()) {
+            session()->flash('success', 'Production bundle created successfully.');
+
+            return response()->json([
+                'message' => 'Production bundle created successfully.',
+                'redirect_url' => route('production-bundles.show', $productionBundle),
+            ]);
+        }
 
         return redirect()
             ->route('production-bundles.show', $productionBundle)
@@ -53,9 +63,18 @@ class ProductionBundleController extends Controller
         ));
     }
 
-    public function update(Request $request, ProductionBundle $productionBundle): RedirectResponse
+    public function update(Request $request, ProductionBundle $productionBundle): JsonResponse|RedirectResponse
     {
         $productionBundle->update($this->validatedData($request, $productionBundle));
+
+        if ($request->expectsJson()) {
+            session()->flash('success', 'Production bundle updated successfully.');
+
+            return response()->json([
+                'message' => 'Production bundle updated successfully.',
+                'redirect_url' => route('production-bundles.show', $productionBundle),
+            ]);
+        }
 
         return redirect()
             ->route('production-bundles.show', $productionBundle)

@@ -8,7 +8,7 @@
         <a href="{{ route('production-bundles.show', $productionBundle) }}" class="btn btn-outline-secondary">Cancel</a>
     </div>
 
-    <form action="{{ route('production-bundles.update', $productionBundle) }}" method="POST" class="card shadow-sm">
+    <form id="production-bundle-form" action="{{ route('production-bundles.update', $productionBundle) }}" method="POST" class="card shadow-sm">
         @csrf
         @method('PUT')
         <div class="card-body">@include('production-bundles._form')</div>
