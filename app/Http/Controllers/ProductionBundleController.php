@@ -38,11 +38,12 @@ class ProductionBundleController extends Controller
             ->when($request->filled('buyer_id'), fn ($query) => $query->where('buyer_id', $request->input('buyer_id')))
             ->when($request->filled('style_id'), fn ($query) => $query->where('style_id', $request->input('style_id')))
             ->when($request->filled('line_id'), fn ($query) => $query->where('line_id', $request->input('line_id')))
-            ->when($request->filled('date_from'), fn ($query) => $query->whereDate('production_date', '>=', $request->input('date_from')))
-            ->when($request->filled('date_to'), fn ($query) => $query->whereDate('production_date', '<=', $request->input('date_to')));
+            ->when($request->filled('date_from'), fn ($query) => $query->where('production_date', '>=', $request->input('date_from')))
+            ->when($request->filled('date_to'), fn ($query) => $query->where('production_date', '<=', $request->input('date_to')));
 
         match ($sort) {
-            'bundle_no', 'quantity', 'production_date' => $productionBundles->orderBy($sort, $direction),
+            'bundle_no', 'quantity' => $productionBundles->orderBy($sort, $direction),
+            'production_date' => $productionBundles->orderBy('production_date', $direction)->orderBy('id', $direction),
             'buyer' => $productionBundles->orderBy(
                 Buyer::query()->select('buyer_name')->whereColumn('buyers.id', 'production_bundles.buyer_id'),
                 $direction,
@@ -54,14 +55,14 @@ class ProductionBundleController extends Controller
             'efficiency' => $productionBundles->orderByRaw(
                 'completed_qty * 100.0 / nullif(quantity, 0) '.$direction,
             ),
-            default => $productionBundles->latest('production_date'),
+            default => $productionBundles->orderByDesc('production_date')->orderByDesc('id'),
         };
 
         $productionBundles = $productionBundles->paginate($perPage)->withQueryString();
 
         return view('production-bundles.index', array_merge(
             compact('productionBundles', 'sort', 'direction', 'perPage'),
-            $this->formOptions(),
+            $this->formOptions(withStyleBuyer: false),
         ));
     }
 
@@ -133,11 +134,14 @@ class ProductionBundleController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function formOptions(): array
+    private function formOptions(bool $withStyleBuyer = true): array
     {
         return [
             'buyers' => Buyer::query()->orderBy('buyer_name')->get(),
-            'styles' => Style::query()->with('buyer')->orderBy('style_no')->get(),
+            'styles' => Style::query()
+                ->when($withStyleBuyer, fn ($query) => $query->with('buyer'))
+                ->orderBy('style_no')
+                ->get(),
             'sewingLines' => SewingLine::query()->orderBy('line_name')->get(),
         ];
     }
