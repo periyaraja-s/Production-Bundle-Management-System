@@ -65,6 +65,22 @@
         <input id="rejected_qty" name="rejected_qty" type="number" min="0" class="form-control @error('rejected_qty') is-invalid @enderror" value="{{ old('rejected_qty', $bundle?->rejected_qty ?? 0) }}" required>
         @error('rejected_qty')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
+    <div class="col-12">
+        <div class="row g-3 rounded bg-body-tertiary p-3">
+            <div class="col-md-4">
+                <div class="text-muted small text-uppercase">Balance</div>
+                <div id="balance" class="fs-4 fw-semibold">0</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small text-uppercase">Efficiency</div>
+                <div id="efficiency" class="fs-4 fw-semibold">0.00%</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small text-uppercase">Rejection</div>
+                <div id="rejection" class="fs-4 fw-semibold">0.00%</div>
+            </div>
+        </div>
+    </div>
     <div class="col-md-6">
         <label for="operator_name" class="form-label">Operator Name</label>
         <input id="operator_name" name="operator_name" type="text" class="form-control @error('operator_name') is-invalid @enderror" value="{{ old('operator_name', $bundle?->operator_name) }}">
@@ -81,3 +97,31 @@
         @error('remarks')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const quantity = document.getElementById('quantity');
+        const completedQty = document.getElementById('completed_qty');
+        const rejectedQty = document.getElementById('rejected_qty');
+        const balance = document.getElementById('balance');
+        const efficiency = document.getElementById('efficiency');
+        const rejection = document.getElementById('rejection');
+
+        const updateCalculations = () => {
+            const quantityValue = Number(quantity.value) || 0;
+            const completedValue = Number(completedQty.value) || 0;
+            const rejectedValue = Number(rejectedQty.value) || 0;
+
+            balance.textContent = quantityValue - completedValue - rejectedValue;
+            efficiency.textContent = quantityValue ? `${((completedValue / quantityValue) * 100).toFixed(2)}%` : '0.00%';
+            rejection.textContent = quantityValue ? `${((rejectedValue / quantityValue) * 100).toFixed(2)}%` : '0.00%';
+        };
+
+        [quantity, completedQty, rejectedQty].forEach((input) => {
+            input.addEventListener('input', updateCalculations);
+            input.addEventListener('change', updateCalculations);
+        });
+
+        updateCalculations();
+    });
+</script>
