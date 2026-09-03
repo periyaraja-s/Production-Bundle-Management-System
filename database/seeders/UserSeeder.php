@@ -11,17 +11,17 @@ class UserSeeder extends Seeder
     {
         User::updateOrCreate(
             ['email' => 'admin@example.com'],
-            ['name' => 'Admin User', 'password' => 'password', 'role' => 'admin']
+            ['name' => 'Admin User', 'password' => 'admin@123', 'role' => 'admin']
         );
 
         User::updateOrCreate(
             ['email' => 'production@example.com'],
-            ['name' => 'Production User', 'password' => 'password', 'role' => 'production']
+            ['name' => 'Production User', 'password' => 'production@123', 'role' => 'production']
         );
 
         User::updateOrCreate(
             ['email' => 'viewer@example.com'],
-            ['name' => 'Viewer User', 'password' => 'password', 'role' => 'viewer']
+            ['name' => 'Viewer User', 'password' => 'viewer@123', 'role' => 'viewer']
         );
     }
 }
