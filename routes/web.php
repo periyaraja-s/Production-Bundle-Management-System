@@ -13,5 +13,15 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('production-bundles', ProductionBundleController::class);
+    Route::resource('production-bundles', ProductionBundleController::class)
+        ->except(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::middleware('role:admin,production')->group(function (): void {
+        Route::get('/production-bundles/create', [ProductionBundleController::class, 'create'])->name('production-bundles.create');
+        Route::post('/production-bundles', [ProductionBundleController::class, 'store'])->name('production-bundles.store');
+        Route::get('/production-bundles/{production_bundle}/edit', [ProductionBundleController::class, 'edit'])->name('production-bundles.edit');
+        Route::put('/production-bundles/{production_bundle}', [ProductionBundleController::class, 'update'])->name('production-bundles.update');
+        Route::patch('/production-bundles/{production_bundle}', [ProductionBundleController::class, 'update']);
+        Route::delete('/production-bundles/{production_bundle}', [ProductionBundleController::class, 'destroy'])->name('production-bundles.destroy');
+    });
 });
