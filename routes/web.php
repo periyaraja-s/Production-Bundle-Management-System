@@ -13,8 +13,9 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('production-bundles', ProductionBundleController::class)
-        ->except(['create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::get('/production-bundles', [ProductionBundleController::class, 'index'])->name('production-bundles.index');
+    Route::get('/production-bundles/{production_bundle}', [ProductionBundleController::class, 'show'])->name('production-bundles.show');
 
     Route::middleware('role:admin,production')->group(function (): void {
         Route::get('/production-bundles/create', [ProductionBundleController::class, 'create'])->name('production-bundles.create');
