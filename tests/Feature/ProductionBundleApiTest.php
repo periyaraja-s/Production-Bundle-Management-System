@@ -7,11 +7,18 @@ use App\Models\ProductionBundle;
 use App\Models\SewingLine;
 use App\Models\Style;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\User;
 use Tests\TestCase;
 
 class ProductionBundleApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->actingAs(User::factory()->create(['role' => 'admin']), 'sanctum');
+    }
 
     public function test_index_returns_paginated_json_with_relations_and_calculations(): void
     {
