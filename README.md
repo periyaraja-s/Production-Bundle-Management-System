@@ -16,7 +16,7 @@ Repository: [https://github.com/periyaraja-s/Production-Bundle-Management-System
 - Soft deletes (records are not permanently removed)
 - Seeded buyers, styles, and sewing lines
 
-Authentication and Laravel Sanctum are **not** implemented. API endpoints are unauthenticated.
+Authentication is implemented for the browser UI with Laravel sessions, and the REST API uses Laravel Sanctum bearer tokens. Bundle read access requires login; bundle create/update/delete requires the `admin` or `production` role. The seeded `viewer` role is read-only.
 
 ## Tech stack
 
@@ -96,6 +96,49 @@ Seeding does **not** insert production bundles. Create those from the web UI or 
 | GET | `/production-bundles/{id}/edit` | Edit form |
 | PUT/PATCH | `/production-bundles/{id}` | Update bundle (AJAX JSON or redirect) |
 | DELETE | `/production-bundles/{id}` | Soft-delete bundle |
+
+
+
+## Authentication
+
+Run the migrations and seed the demo users:
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+Browser login:
+
+- `/login`
+- Admin: `admin@example.com` / `password`
+- Production: `production@example.com` / `password`
+- Viewer: `viewer@example.com` / `password`
+
+These credentials are for local/demo use only. Change them before deploying the application.
+
+### API authentication
+
+Login:
+
+```
+POST /api/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "password"
+}
+```
+
+The response contains a Sanctum bearer token. Send it with protected API requests:
+
+```
+Authorization: Bearer <token>
+Accept: application/json
+```
+
+Logout with `POST /api/logout`. The current token is revoked.
 
 ## REST API
 
