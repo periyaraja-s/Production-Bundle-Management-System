@@ -2,7 +2,7 @@
 
 Apparel ERP module for managing sewing-floor production bundles. The application provides a Bootstrap 5 web UI and a JSON REST API for creating, listing, updating, and soft-deleting bundles, with live quantity calculations and a production dashboard.
 
-Repository: [https://github.com/periyaraja-s/Production-Bundle-Management-System](https://github.com/periyaraja-s/Production-Bundle-Management-System)
+Repository: https://github.com/periyaraja-s/Production-Bundle-Management-System
 
 ## Features
 
@@ -14,7 +14,9 @@ Repository: [https://github.com/periyaraja-s/Production-Bundle-Management-System
 - Production dashboard with seven aggregate metrics
 - REST API for bundles and dashboard metrics
 - Soft deletes (records are not permanently removed)
-- Seeded buyers, styles, and sewing lines
+- Seeded buyers, styles, sewing lines, and demo users
+- Role-based access control (Admin, Production, Viewer)
+- Admin-only user management with activation/deactivation
 
 Authentication is implemented for the browser UI with Laravel sessions, and the REST API uses Laravel Sanctum bearer tokens. Bundle read access requires login; bundle create/update/delete requires the `admin` or `production` role. The seeded `viewer` role is read-only.
 
@@ -96,10 +98,23 @@ Seeding does **not** insert production bundles. Create those from the web UI or 
 | GET | `/production-bundles/{id}/edit` | Edit form |
 | PUT/PATCH | `/production-bundles/{id}` | Update bundle (AJAX JSON or redirect) |
 | DELETE | `/production-bundles/{id}` | Soft-delete bundle |
+| GET | `/users` | Admin-only user management |
+| POST | `/users` | Admin-only create user |
+| PUT/PATCH | `/users/{id}` | Admin-only update user |
+| POST | `/users/{id}/toggle-active` | Admin-only activate/deactivate user |
 
 
 
 ## Authentication
+
+### Roles and permissions
+
+| Role | Dashboard | View Bundles | Create/Edit/Delete Bundles | User Management |
+|---|---:|---:|---:|---:|
+| Admin | Yes | Yes | Yes | Yes |
+| Production | Yes | Yes | Yes | No |
+| Viewer | Yes | Yes | No | No |
+
 
 Run the migrations and seed the demo users:
 
@@ -142,7 +157,7 @@ Logout with `POST /api/logout`. The current token is revoked.
 
 ## REST API
 
-No authentication. Send `Accept: application/json` for JSON error responses.
+Protected endpoints require a Sanctum bearer token. Send `Accept: application/json` for JSON error responses.
 
 | Method | Path | Description |
 |---|---|---|
@@ -219,7 +234,7 @@ Web (`/`) and API (`/api/dashboard`) use one SQL aggregate query (not a full-tab
 php artisan test
 ```
 
-Feature tests cover web validation and the REST API. Tests use `RefreshDatabase` against the database configured for the app (phpunit does not force SQLite). Use a dedicated test database if you do not want local data reset.
+Feature tests cover authenticated web flows, web validation, role-protected access, and the REST API. Tests use `RefreshDatabase` against the database configured for the app (phpunit does not force SQLite). Use a dedicated test database if you do not want local data reset.
 
 ## Performance considerations
 
@@ -237,3 +252,7 @@ Designed to remain efficient with large bundle volumes (assessment target: 50,00
 - Do not commit `.env` or application secrets. Use `.env.example` as the template.
 - Push feature work to a branch and open a pull request against the GitHub remote.
 - After pulling, run `composer install` and `php artisan migrate` if dependencies or schema changed.
+
+## Portfolio note
+
+This project demonstrates a production-oriented Laravel ERP module with server-side validation, AJAX workflows, SQL-backed reporting, REST API design, Sanctum authentication, role-based authorization, soft deletes, and feature testing. It is intended to be run locally for portfolio demonstration; deployment is intentionally outside the current project scope.
