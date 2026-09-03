@@ -14,6 +14,7 @@
                 <div class="navbar-nav flex-row align-items-center gap-3">
                     <a class="nav-link" href="{{ route('dashboard') }}">Dashboard</a>
                     <a class="nav-link" href="{{ route('production-bundles.index') }}">Bundles</a>
+                    @if (auth()->user()->isAdmin())<a class="nav-link" href="{{ route('users.index') }}">Users</a>@endif
                     <span class="navbar-text text-white">{{ auth()->user()->name }} ({{ auth()->user()->role }})</span>
                     <form method="POST" action="{{ route('logout') }}" class="d-inline">
                         @csrf
